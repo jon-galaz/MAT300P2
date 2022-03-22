@@ -36,6 +36,24 @@ function cubicspline
     matrix(:, n+4) = resize(PY,1, n+2);
     
     #"hardcode" derivatives
+    # Redundant code: it will be 0 every time, no need to re-do
+    %matrix(n+1,:) = zeros(1,n+4);
+    #Last derivative:
+    dV = zeros(1, n+4);
+    dV(1, 3) = 1/3;
+    for i = 1 : (n-1)
+      dV(1, i+3) = Ts(n) - Ts(i);
+    endfor
+    dV = dV * 6;
+    
+    matrix(n+2, :) = dV;
+    
+    matrix
+    
+    #RREF matrix
+    matrix = rref(matrix);
+    
+    # Output matrix to check result
     matrix
     
   #matrix for x, y and z
@@ -43,7 +61,9 @@ function cubicspline
     matrix = zeros(n + 2, n + 5);
   endif
   
-  
+  temp = matrix(:, (n+3))
+  temp = matrix(:, (n+4))
+  plot(matrix(:, (n+3)), matrix(:, (n+4)))
   
   
   endfunction
