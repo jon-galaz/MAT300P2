@@ -36,8 +36,7 @@ function cubicspline
     matrix(:, n+4) = resize(PY,1, n+2);
     
     #"hardcode" derivatives
-    # Redundant code: it will be 0 every time, no need to re-do
-    %matrix(n+1,:) = zeros(1,n+4);
+    matrix(n+1,3) = 2;
     #Last derivative:
     dV = zeros(1, n+4);
     dV(1, 3) = 1/3;
