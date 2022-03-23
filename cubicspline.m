@@ -1,98 +1,108 @@
-
-
-
+# DigiPen Institute of Technology Europe Bilbao
+#
+# Pablo Riesco, Jon Galaz
+# p.riesco@digipen.edu, jon.galaz@digipen.edu
+# 3/25/2021
+#
+# MAT300 Cubic splines project
+# cubicspline: curves in 2D and 3D using cubic splines
+#===============================================================================
 function cubicspline
-  
   # Clear console
   clc;
   # Get source data
   source("data.m");
   
-  #compute the Ts mesh and the output mesh
+  # n = number of points
   n = length(PX);
-
+  # Mesh of nodes Ts going from 0 to n-1
+  Ts = linspace(0, n-1, n);
+  # Output mesh from 0 to n-1 with outputNodes values
+  outMesh = linspace(0, n-1, outputNodes);
   
-  Ts = linspace(0, n, n);
-  outMesh = linspace(0, n, outputNodes);
-  Ps = ones(1, n + dimension);
-  evaluatedN = length(outMesh);
+  # Matrix used for 
+  matrix = zeros(n + 2, n + 2 + dimension);
   
-  if(dimension == 2)
-    matrix = zeros(n + 2, n + 4);
-  else
-    matrix = zeros(n + 2, n + 5);
-  endif
-    
-  #rows
-  for i = 1 : n
-    #columns
-    for j = 1 : n + dimension
-      if(j <=4 )
-        matrix(i, j) = Ps(1,j) * Ts(1, i)^(j-1);
+  # Output matrix, where the x, y and z are stored
+  finalMatrix = zeros(dimension, outputNodes);
+  
+  # First 4 columns are the Ts^0, Ts^1 ...
+  for i = 1 : 4
+    matrix(:, i) = resize(Ts.^(i-1), 1, n+2);
+  endfor
+  
+  # For the rest of the columns, compute manually
+  for i = 3 : n
+    for j = 5 : n + 2
+      # Only apply addition if the result is positive
+      if(Ts(1, i-1) - Ts(1, j-4) > 0)
+        matrix(i, j) = (Ts(1, i-1) - Ts(1, j-4))^3;
       else
-        matrix(i, j) = Ps(1,j) * max(0,(Ts(1, i) - Ts(1, j - 3))^3);
+        continue;
       endif
     endfor
   endfor
   
-  #"hardcode" the x and y values
+  # Put the x, y and z values in the last columns
   matrix(:, n+3) = resize(PX,1, n+2);
   matrix(:, n+4) = resize(PY,1, n+2);
   if(dimension == 3)
     matrix(:, n+5) = resize(PZ,1, n+2);
   endif
   
-  #"hardcode" derivatives
+  # Put in the derivatives on the last rows
+  # First row: second derivative using t0 = 0
   matrix(n+1,3) = 2;
-  #Last derivative:
-  dV = zeros(1, n+2+dimension);
-  dV(1, 3) = 1/3;
+  
+  # Second row: second derivate using tn = n-1
+  matrix(n+2,3) = 2;
   for i = 1 : (n-1)
-    dV(1, i+3) = Ts(n) - Ts(i);
+    matrix(n+2, i+3) = 6 * (Ts(n) - Ts(i));
   endfor
-  dV = dV * 6;
   
-  matrix(n+2, :) = dV;
-  
-  #RREF matrix
+  # RREF matrix
   matrix = rref(matrix);
   
-  #Get the coefficients for the polynomial in each range
-  if(dimension == 2)
+  # Get the coefficients for the polynomial
   xCoef = matrix(:, (n+3))';
   yCoef = matrix(:, (n+4))';
-  else
-    xCoef = matrix(:, (n+3))';
-    yCoef = matrix(:, (n+4))';
+  if(dimension == 3)
     zCoef = matrix(:, (n+5))';
   endif
   
-  finalMatrix = zeros(3, evaluatedN-1);
+  # Evaluate the polynomial for each output node
+  # Firstly add the first value
+  finalMatrix(1, :) = xCoef(1,1);
+  finalMatrix(2, :) = yCoef(1,1);
+  if(dimension == 3)
+    finalMatrix(3, :) = zCoef(1,1);
+  endif
   
-  #evaluate the polynomial for each output node
-  for i = 1 : evaluatedN-1
-    finalMatrix(1, i) = xCoef(1,1);
-    finalMatrix(2, i) = yCoef(1,1);
+  # Add the second, third and fourth values
+  for i = 2 : 4
+    finalMatrix(1, :) += xCoef(1,i) * outMesh(1, :).^(i-1);
+    finalMatrix(2, :) += yCoef(1,i) * outMesh(1, :).^(i-1);
     if(dimension == 3)
-      finalMatrix(3, i) = zCoef(1,1);
+      finalMatrix(3, :) += zCoef(1,i)* outMesh(1, :).^(i-1);
     endif
-    for j = 2 : n + 2
-      if(j <= 4)
-        finalMatrix(1, i) += xCoef(1,j) * outMesh(1, i)^(j-1);
-        finalMatrix(2, i) += yCoef(1,j) * outMesh(1, i)^(j-1);
+  endfor
+
+  # Add the remaining values manually
+  for i = 1 : outputNodes
+    for j = 5 : n + 2
+      if((outMesh(1, i) - Ts(1, j - 3)) > 0)
+        finalMatrix(1, i) += xCoef(1,j) * (outMesh(1, i) - Ts(1, j - 3))^3;
+        finalMatrix(2, i) += yCoef(1,j) * (outMesh(1, i) - Ts(1, j - 3))^3;
         if(dimension == 3)
-          finalMatrix(3, i) = zCoef(1,j)* outMesh(1, i)^(j-1);
+          finalMatrix(3, i) += zCoef(1,j)* (outMesh(1, i) - Ts(1, j - 3))^3;
         endif
       else
-        finalMatrix(1, i) += xCoef(1,j) * max(0,(outMesh(1, i) - Ts(1, j - 3))^3);
-        finalMatrix(2, i) += yCoef(1,j) * max(0,(outMesh(1, i) - Ts(1, j - 3))^3);
-        if(dimension == 3)
-          finalMatrix(3, i) = zCoef(1,j)* max(0,(outMesh(1, i) - Ts(1, j - 3))^3);
-        endif
+        continue;
       endif
     endfor
   endfor
 
+  # Plot
   if(dimension == 2)
     plot(finalMatrix(1, :), finalMatrix(2,:));
     hold on;
@@ -102,8 +112,5 @@ function cubicspline
     hold on;
     plot3(PX, PY, PZ, "or");
   endif
-  
-  
-  
   
   endfunction
