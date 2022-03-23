@@ -104,7 +104,7 @@ function cubicspline
 
   # Plot
   if(dimension == 2)
-    plot(finalMatrix(1, :), finalMatrix(2,:));
+    plot(finalMatrix(1, :), finalMatrix(2,:), "-b");
     hold on;
     plot(PX, PY, "or");
   else
