@@ -26,11 +26,14 @@ function cubicspline
   # Output matrix, where the x, y and z are stored
   finalMatrix = zeros(dimension, outputNodes);
   
+  #==============Code Block (1)===================
   # First 4 columns are the Ts^0, Ts^1 ...
   for i = 1 : 4
     matrix(:, i) = resize(Ts.^(i-1), 1, n+2);
   endfor
+  #================================================
   
+  #==============Code Block (2)===================
   # For the rest of the columns, compute manually
   for i = 3 : n
     for j = 5 : n + 2
@@ -42,14 +45,18 @@ function cubicspline
       endif
     endfor
   endfor
+  #================================================
   
+  #==============Code Block (3)===================
   # Put the x, y and z values in the last columns
   matrix(:, n+3) = resize(PX,1, n+2);
   matrix(:, n+4) = resize(PY,1, n+2);
   if(dimension == 3)
     matrix(:, n+5) = resize(PZ,1, n+2);
   endif
+  #================================================
   
+  #==============Code Block (4)===================
   # Put in the derivatives on the last rows
   # First row: second derivative using t0 = 0
   matrix(n+1,3) = 2;
@@ -59,6 +66,7 @@ function cubicspline
   for i = 1 : (n-1)
     matrix(n+2, i+3) = 6 * (Ts(n) - Ts(i));
   endfor
+  #================================================
   
   # RREF matrix
   matrix = rref(matrix);
@@ -71,13 +79,16 @@ function cubicspline
   endif
   
   # Evaluate the polynomial for each output node
+  #==============Code Block (5)===================
   # Firstly add the first value
   finalMatrix(1, :) = xCoef(1,1);
   finalMatrix(2, :) = yCoef(1,1);
   if(dimension == 3)
     finalMatrix(3, :) = zCoef(1,1);
   endif
+  #================================================
   
+  #==============Code Block (6)===================
   # Add the second, third and fourth values
   for i = 2 : 4
     finalMatrix(1, :) += xCoef(1,i) * outMesh(1, :).^(i-1);
@@ -86,7 +97,9 @@ function cubicspline
       finalMatrix(3, :) += zCoef(1,i)* outMesh(1, :).^(i-1);
     endif
   endfor
-
+  #================================================
+  
+  #==============Code Block (7)===================
   # Add the remaining values manually
   for i = 1 : outputNodes
     for j = 5 : n + 2
@@ -101,7 +114,8 @@ function cubicspline
       endif
     endfor
   endfor
-
+  #================================================
+  
   # Plot
   if(dimension == 2)
     plot(finalMatrix(1, :), finalMatrix(2,:));
