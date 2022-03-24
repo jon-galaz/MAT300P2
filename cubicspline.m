@@ -122,7 +122,7 @@ function cubicspline
     hold on;
     plot(PX, PY, "or");
   else
-    plot3(finalMatrix(1, :), finalMatrix(2, :), finalMatrix(3,:));
+    plot3(finalMatrix(1, :), finalMatrix(2, :), finalMatrix(3,:), "-b");
     hold on;
     plot3(PX, PY, PZ, "or");
   endif
